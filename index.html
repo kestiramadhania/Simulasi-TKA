@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulasi TKA Sejarah SMK</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF1F6;--card:#fff;--ink:#14213D;--mute:#5B6783;--line:#D5DCE8;--acc:#0F766E;--acc-t:#D9F1EE;--bad:#B42318;--bad-t:#FDE4E1;--warn:#B45309;--on:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1626;--card:#17233A;--ink:#EAF0FA;--mute:#9AA8C4;--line:#2A3957;--acc:#4FD1C5;--acc-t:#12403D;--bad:#FF8A7A;--bad-t:#4A1F1A;--warn:#FBBF24;--on:#0E1626}}
+:root[data-theme="dark"]{--bg:#0E1626;--card:#17233A;--ink:#EAF0FA;--mute:#9AA8C4;--line:#2A3957;--acc:#4FD1C5;--acc-t:#12403D;--bad:#FF8A7A;--bad-t:#4A1F1A;--warn:#FBBF24;--on:#0E1626}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5;min-height:100vh}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:2rem;line-height:1.1;margin:8px 0 12px;font-weight:800}
+h2{font-size:1.15rem;margin:0 0 10px}
+p{margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.muted{color:var(--mute);font-size:.92rem}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px 18px;min-height:48px}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.primary{background:var(--acc);color:var(--on);font-weight:600;width:100%}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.chip{border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:.85rem;color:var(--mute)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 0;z-index:5}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:1.3rem;padding:4px 14px;border-radius:99px;background:var(--card);border:1px solid var(--line)}
+.timer.low{color:var(--warn);border-color:var(--warn)}
+.prog{height:6px;background:var(--line);border-radius:9px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--acc);transition:width .25s}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.dot{min-height:38px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600}
+.dot.done{background:var(--acc-t);border-color:var(--acc)}
+.dot.cur{outline:2px solid var(--ink)}
+.q{font-size:1.15rem;font-weight:600;margin:6px 0 16px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--card);color:var(--ink);border:1.5px solid var(--line);margin-bottom:10px;padding:14px}
+.opt b{flex:0 0 28px;height:28px;border-radius:50%;border:1.5px solid var(--mute);display:grid;place-items:center;font-size:.85rem}
+.opt.sel{border-color:var(--acc);background:var(--acc-t)}
+.opt.sel b{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.opt.ok{border-color:var(--acc);background:var(--acc-t)}
+.opt.no{border-color:var(--bad);background:var(--bad-t)}
+.opt[disabled]{cursor:default}
+.score{text-align:center}
+.ring{width:150px;height:150px;border-radius:50%;margin:8px auto 14px;display:grid;place-items:center;background:conic-gradient(var(--acc) calc(var(--p)*1%),var(--line) 0)}
+.ring span{width:118px;height:118px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:2.4rem;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stats div{background:var(--bg);border-radius:10px;padding:10px 4px}
+.stats strong{display:block;font-size:1.4rem}
+.tag{display:inline-block;font-size:.8rem;padding:2px 10px;border-radius:99px;background:var(--acc-t);color:var(--ink);margin-bottom:8px}
+.exp{background:var(--bg);border-left:4px solid var(--acc);border-radius:8px;padding:12px;margin-top:6px;font-size:.95rem}
+.hide{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:20px;z-index:10}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const DURATION = 60 * 60;
+const G=(m,l)=>l.map(([q,o,a,e])=>({m,q,o,a,e}));
+const QS=[
+...G("Prasejarah",[
+["Masa kehidupan manusia sebelum mengenal tulisan disebut…",["Zaman sejarah","Zaman prasejarah","Zaman Hindu-Buddha","Zaman kolonial"],1,"Prasejarah (praaksara) adalah masa sebelum ada tulisan; sumbernya fosil dan artefak."],
+["Fosil Pithecanthropus erectus di Trinil pertama kali ditemukan oleh…",["Eugene Dubois","G.H.R. von Koenigswald","Franz Junghuhn","Thomas Raffles"],0,"Eugene Dubois menemukannya di Trinil, Ngawi, tahun 1891."],
+["Tumpukan kulit kerang dan siput di pantai peninggalan Mesolitikum disebut…",["Menhir","Dolmen","Abris sous roche","Kjokkenmoddinger"],3,"Kjokkenmoddinger berarti sampah dapur; banyak ditemukan di pantai timur Sumatra."],
+["Batu tegak untuk memuja arwah leluhur pada zaman Megalitikum disebut…",["Nekara","Kapak persegi","Menhir","Waruga"],2,"Menhir adalah tugu batu tunggal sebagai media pemujaan arwah leluhur."],
+["Perubahan hidup dari food gathering menjadi food producing terjadi pada zaman…",["Neolitikum","Paleolitikum","Mesolitikum","Zaman perunggu"],0,"Pada Neolitikum manusia mulai bercocok tanam dan menetap."]]),
+...G("Hindu-Buddha",[
+["Kerajaan Hindu tertua di Indonesia, dibuktikan dengan prasasti Yupa, adalah…",["Tarumanegara","Sriwijaya","Kutai","Kalingga"],2,"Kutai di Kalimantan Timur, raja Mulawarman, meninggalkan tujuh Yupa."],
+["Prasasti Ciaruteun dan Tugu adalah peninggalan kerajaan…",["Kutai","Mataram Kuno","Majapahit","Tarumanegara"],3,"Prasasti itu berkaitan dengan Raja Purnawarman dari Tarumanegara di Jawa Barat."],
+["Kerajaan maritim di Palembang yang menjadi pusat agama Buddha di Asia Tenggara adalah…",["Sriwijaya","Majapahit","Singasari","Kediri"],0,"Sriwijaya menguasai Selat Malaka dan menjadi pusat belajar agama Buddha."],
+["Candi Borobudur dibangun pada masa dinasti…",["Sanjaya","Syailendra","Isyana","Warmadewa"],1,"Borobudur dibangun Dinasti Syailendra dari Mataram Kuno sekitar abad ke-8–9."],
+["Sumpah Palapa untuk menyatukan Nusantara diucapkan oleh…",["Hayam Wuruk","Raden Wijaya","Mpu Prapanca","Gajah Mada"],3,"Gajah Mada, Mahapatih Majapahit, bersumpah tidak makan palapa sebelum Nusantara bersatu."],
+["Kitab Negarakertagama, sumber utama sejarah Majapahit, ditulis oleh…",["Mpu Tantular","Mpu Sindok","Mpu Prapanca","Mpu Kanwa"],2,"Mpu Prapanca menulisnya tahun 1365; Mpu Tantular menulis Sutasoma."]]),
+...G("Masuknya Islam",[
+["Menurut Hamka, Islam masuk ke Nusantara langsung dari…",["Gujarat","Persia","Cina","Mekah (Arab)"],3,"Teori Mekah menyatakan Islam dibawa pedagang Arab sejak abad ke-7."],
+["Kerajaan Islam pertama di Indonesia adalah…",["Samudera Pasai","Demak","Banten","Ternate"],0,"Samudera Pasai di Aceh Utara berdiri abad ke-13 dengan Sultan Malik as-Saleh."],
+["Sunan Kalijaga menyebarkan Islam terutama melalui…",["Kekuatan militer","Perdagangan rempah","Kesenian wayang","Sekolah modern"],2,"Walisongo memakai pendekatan budaya; Sunan Kalijaga memanfaatkan wayang dan gamelan."],
+["Kerajaan Islam pertama di Pulau Jawa yang didirikan Raden Patah adalah…",["Mataram Islam","Banten","Cirebon","Demak"],3,"Demak berdiri akhir abad ke-15 dan menjadi pusat penyebaran Islam di Jawa."],
+["Sultan Agung dari Mataram menyerang VOC di Batavia pada tahun…",["1511","1596","1628","1602"],2,"Serangan pertama 1628 dan kedua 1629 gagal, terutama karena kekurangan logistik."]]),
+...G("Masa Kolonial",[
+["Bangsa Eropa pertama yang menguasai Malaka (1511) adalah…",["Spanyol","Belanda","Inggris","Portugis"],3,"Portugis di bawah Alfonso de Albuquerque merebut Malaka tahun 1511."],
+["Motif kedatangan bangsa Eropa yang dikenal sebagai semboyan 3G adalah…",["Gold, Gospel, Glory","Gold, Grain, Glory","Gospel, Guns, Grain","Glory, Guns, Gold"],0,"Gold (kekayaan), Gospel (penyebaran agama), Glory (kejayaan)."],
+["VOC didirikan Belanda pada tahun…",["1596","1799","1602","1816"],2,"VOC berdiri 1602 dan dibubarkan 1799 karena korupsi dan utang."],
+["Sistem Tanam Paksa (Cultuurstelsel) pada 1830 diterapkan oleh…",["Daendels","Johannes van den Bosch","Raffles","Van Heutsz"],1,"Van den Bosch mewajibkan rakyat menanam komoditas ekspor di sebagian tanahnya."],
+["Jalan Raya Pos Anyer–Panarukan dibangun atas perintah…",["Raffles","Van den Bosch","Du Bus de Gisignies","Daendels"],3,"Daendels (1808–1811) membangunnya untuk pertahanan dengan kerja paksa."],
+["Perang Diponegoro melawan Belanda berlangsung pada tahun…",["1873–1904","1808–1812","1817–1818","1825–1830"],3,"Perang Jawa 1825–1830 dipicu pematokan tanah makam leluhur Diponegoro."],
+["Pemimpin Perang Padri di Sumatra Barat adalah…",["Teuku Umar","Tuanku Imam Bonjol","Pattimura","Sultan Hasanuddin"],1,"Imam Bonjol memimpin kaum Padri hingga ditangkap Belanda tahun 1837."],
+["Pejuang perempuan yang memimpin perlawanan dalam Perang Aceh adalah…",["Dewi Sartika","R.A. Kartini","Cut Nyak Dhien","Martha Christina Tiahahu"],2,"Cut Nyak Dhien melanjutkan perjuangan setelah suaminya, Teuku Umar, gugur."]]),
+...G("Pergerakan Nasional",[
+["Organisasi pergerakan nasional pertama, berdiri 20 Mei 1908, adalah…",["Budi Utomo","Sarekat Islam","Indische Partij","PNI"],0,"Budi Utomo didirikan dr. Soetomo; 20 Mei diperingati sebagai Hari Kebangkitan Nasional."],
+["Sarekat Dagang Islam (1905) dipelopori oleh…",["H.O.S. Tjokroaminoto","Ki Hajar Dewantara","H. Samanhudi","dr. Wahidin"],2,"H. Samanhudi mendirikannya di Solo untuk melawan dominasi pedagang asing."],
+["Berikut yang BUKAN tokoh Tiga Serangkai pendiri Indische Partij adalah…",["E.F.E. Douwes Dekker","Tjipto Mangunkusumo","Suwardi Suryaningrat","dr. Soetomo"],3,"Tiga Serangkai: Douwes Dekker, Tjipto Mangunkusumo, Suwardi Suryaningrat."],
+["Sumpah Pemuda diikrarkan pada Kongres Pemuda II tanggal…",["20 Mei 1908","28 Oktober 1928","17 Agustus 1945","10 November 1945"],1,"Tiga ikrar: satu tanah air, satu bangsa, satu bahasa persatuan, Indonesia."],
+["Lagu Indonesia Raya pertama kali diperdengarkan dengan biola oleh…",["Ismail Marzuki","H. Mutahar","W.R. Supratman","Kusbini"],2,"W.R. Supratman memperdengarkannya pada penutupan Kongres Pemuda II."],
+["Partai Nasional Indonesia (PNI) tahun 1927 didirikan oleh…",["Mohammad Hatta","Soekarno","Sutan Sjahrir","Tan Malaka"],1,"PNI didirikan di Bandung dengan tujuan Indonesia merdeka."],
+["Berikut yang BUKAN bagian Trias Van Deventer (Politik Etis) adalah…",["Irigasi","Edukasi","Emigrasi","Industrialisasi"],3,"Trias Van Deventer: irigasi, edukasi, dan emigrasi."],
+["Organisasi mahasiswa Indonesia di Belanda yang dipimpin Mohammad Hatta adalah…",["Jong Java","Perhimpunan Indonesia","Taman Siswa","Muhammadiyah"],1,"Perhimpunan Indonesia (dulu Indische Vereeniging) menegaskan tuntutan merdeka."],
+["Ki Hajar Dewantara pada 1922 mendirikan lembaga pendidikan bernama…",["Taman Siswa","INS Kayutanam","Muhammadiyah","Sekolah Kartini"],0,"Taman Siswa di Yogyakarta mengajarkan pendidikan berjiwa kebangsaan."]]),
+...G("Pendudukan Jepang",[
+["Belanda menyerah kepada Jepang pada Maret 1942 melalui perjanjian di…",["Linggarjati","Renville","Kalijati","Roem-Royen"],2,"Perjanjian Kalijati (Subang) menandai berakhirnya kekuasaan Belanda."],
+["Organisasi militer bentukan Jepang tahun 1943 yang menjadi cikal bakal TNI adalah…",["Heiho","Seinendan","Keibodan","PETA"],3,"PETA (Pembela Tanah Air) adalah tentara sukarela yang dilatih Jepang."],
+["Tenaga kerja paksa Indonesia pada masa pendudukan Jepang disebut…",["Romusha","Heiho","Kempetai","Fujinkai"],0,"Romusha dipaksa membangun proyek militer dalam kondisi sangat berat."],
+["BPUPKI yang dibentuk Jepang pada 29 April 1945 diketuai oleh…",["Soekarno","dr. K.R.T. Radjiman Wedyodiningrat","Mohammad Hatta","Ki Bagus Hadikusumo"],1,"Radjiman Wedyodiningrat memimpin BPUPKI yang merumuskan dasar negara."]]),
+...G("Proklamasi",[
+["Peristiwa golongan muda membawa Soekarno-Hatta agar segera memproklamasikan kemerdekaan disebut…",["Peristiwa Rengasdengklok","Bandung Lautan Api","Pertempuran Ambarawa","Peristiwa Merah Putih"],0,"Pada 16 Agustus 1945 Soekarno-Hatta dibawa ke Rengasdengklok."],
+["Naskah proklamasi kemerdekaan diketik oleh…",["Sukarni","Ahmad Soebardjo","Wikana","Sayuti Melik"],3,"Sayuti Melik mengetik naskah dari tulisan tangan Soekarno."],
+["Proklamasi 17 Agustus 1945 dibacakan di…",["Lapangan Ikada","Pegangsaan Timur 56","Istana Merdeka","Rengasdengklok"],1,"Dibacakan di kediaman Soekarno, Jalan Pegangsaan Timur 56, Jakarta."],
+["Hasil sidang PPKI pada 18 Agustus 1945 adalah…",["Menyusun Piagam Jakarta","Membentuk BPUPKI","Mengesahkan UUD 1945 dan memilih presiden-wakil presiden","Menyetujui hasil KMB"],2,"PPKI mengesahkan UUD 1945 dan memilih Soekarno-Hatta."]]),
+...G("Revolusi Kemerdekaan",[
+["Pertempuran 10 November 1945 di Surabaya diperingati sebagai…",["Hari Pahlawan","Hari Sumpah Pemuda","Hari Kebangkitan Nasional","Hari Pendidikan Nasional"],0,"Perlawanan arek-arek Surabaya melawan Sekutu dikenang sebagai Hari Pahlawan."],
+["Hasil Perundingan Linggarjati 1946: Belanda mengakui kekuasaan de facto RI atas…",["Seluruh Indonesia","Jawa, Sumatra, dan Madura","Jawa dan Bali","Sumatra dan Kalimantan"],1,"Linggarjati mengakui Jawa, Sumatra, dan Madura sebagai wilayah RI."],
+["Perundingan RI–Belanda yang berlangsung di atas kapal USS Renville adalah…",["Linggarjati","Roem-Royen","Renville","KMB"],2,"Perjanjian Renville (1948) sangat mempersempit wilayah RI."],
+["Belanda mengakui kedaulatan Republik Indonesia Serikat (RIS) pada tanggal…",["18 Agustus 1945","27 Desember 1949","17 Agustus 1950","5 Juli 1959"],1,"Hasil KMB di Den Haag: penyerahan kedaulatan pada 27 Desember 1949."],
+["Serangan Umum 1 Maret 1949 di Yogyakarta bertujuan…",["Merebut Jakarta","Menunjukkan bahwa TNI dan RI masih ada","Menghancurkan Belanda sepenuhnya","Mengakhiri KMB"],1,"Serangan enam jam itu membuktikan kepada dunia bahwa RI masih eksis."]]),
+...G("Orde Lama sampai Reformasi",[
+["Salah satu isi Dekret Presiden 5 Juli 1959 adalah…",["Pembentukan RIS","Kembali ke UUD 1945","Pengesahan Piagam Jakarta","Pembubaran BPUPKI"],1,"Dekret menyatakan kembali ke UUD 1945 dan membubarkan Konstituante."],
+["Supersemar (11 Maret 1966) diberikan Presiden Soekarno kepada…",["A.H. Nasution","Ahmad Yani","Letjen Soeharto","Sarwo Edhie"],2,"Supersemar memberi mandat kepada Soeharto untuk memulihkan keamanan dan ketertiban."],
+["Program pembangunan lima tahunan pada masa Orde Baru disebut…",["Gerakan Benteng","Sistem Ali-Baba","Ekonomi Terpimpin","Repelita"],3,"Repelita dimulai 1969 dengan Trilogi Pembangunan."],
+["Setelah Soeharto mundur pada 21 Mei 1998, presiden penggantinya adalah…",["B.J. Habibie","Abdurrahman Wahid","Megawati Soekarnoputri","Try Sutrisno"],0,"Wakil Presiden B.J. Habibie dilantik menjadi presiden sesuai konstitusi."]])
+];
+let ans, cur, left, tick, startedAt;
+const $ = s => document.querySelector(s), app = $('#app');
+const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+
+function home(){
+  clearInterval(tick);
+  app.innerHTML = `
+  <h1>Simulasi TKA Sejarah SMK</h1>
+  <p class="muted">Latihan Tes Kemampuan Akademik mata pelajaran Sejarah Indonesia untuk siswa SMK.</p>
+  <div class="card">
+    <h2>Sebelum mulai</h2>
+    <p>Kamu mengerjakan ${QS.length} soal pilihan ganda dalam ${DURATION/60} menit. Jawaban bisa diubah sebelum waktu habis atau sebelum kamu menekan Selesai.</p>
+    <p>Setiap jawaban benar bernilai 2 poin (nilai maksimal 100). Jawaban salah dan kosong tidak mengurangi nilai.</p>
+    <div class="chips">${[...new Set(QS.map(x=>x.m))].map(m=>`<span class="chip">${m}</span>`).join('')}</div>
+  </div>
+  <button class="primary" id="go">Mulai ujian</button>`;
+  $('#go').onclick = start;
+}
+function start(){
+  ans = Array(QS.length).fill(null); cur = 0; left = DURATION; startedAt = Date.now();
+  clearInterval(tick);
+  tick = setInterval(()=>{ left--; const t=$('#tm'); if(t){t.textContent=fmt(left);t.classList.toggle('low',left<=60)} if(left<=0) finish(true); },1000);
+  render();
+}
+function render(){
+  const q = QS[cur];
+  app.innerHTML = `
+  <div class="top">
+    <div class="bar"><span class="muted">Soal ${cur+1} dari ${QS.length}</span><span class="timer ${left<=60?'low':''}" id="tm" role="timer">${fmt(left)}</span></div>
+    <div class="prog"><i style="width:${(cur+1)/QS.length*100}%"></i></div>
+  </div>
+  <div class="card">
+    <span class="tag">${q.m}</span>
+    <div class="q">${q.q}</div>
+    ${q.o.map((t,i)=>`<button class="opt ${ans[cur]===i?'sel':''}" data-o="${i}"><b>${'ABCD'[i]}</b><span>${t}</span></button>`).join('')}
+  </div>
+  <div class="row">
+    <button class="ghost" id="prev" ${cur===0?'disabled':''}>Sebelumnya</button>
+    ${cur<QS.length-1?'<button class="primary" id="next">Berikutnya</button>':'<button class="primary" id="fin">Selesai</button>'}
+  </div>
+  <div class="card" style="margin-top:14px"><p class="muted">Navigasi soal</p><div class="dots">${QS.map((_,i)=>`<button class="dot ${ans[i]!==null?'done':''} ${i===cur?'cur':''}" data-i="${i}" aria-label="Soal ${i+1}">${i+1}</button>`).join('')}</div></div>`;
+  app.querySelectorAll('.dot').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;render()});
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ans[cur]=+b.dataset.o;render()});
+  $('#prev').onclick=()=>{if(cur>0){cur--;render()}};
+  if($('#next')) $('#next').onclick=()=>{cur++;render()};
+  if($('#fin')) $('#fin').onclick=confirmFinish;
+}
+function confirmFinish(){
+  const blank = ans.filter(a=>a===null).length;
+  const m = document.createElement('div'); m.className='modal';
+  m.innerHTML = `<div class="card" style="max-width:360px;margin:0"><h2>Akhiri ujian?</h2>
+  <p>${blank?`Masih ada ${blank} soal belum dijawab.`:'Semua soal sudah dijawab.'} Setelah selesai, jawaban tidak bisa diubah.</p>
+  <div class="row"><button class="ghost" id="c">Kembali</button><button class="primary" id="y">Selesai</button></div></div>`;
+  document.body.appendChild(m);
+  $('#c').onclick=()=>m.remove();
+  $('#y').onclick=()=>{m.remove();finish(false)};
+}
+function finish(timeUp){
+  clearInterval(tick);
+  const used = Math.min(DURATION, Math.round((Date.now()-startedAt)/1000));
+  const ok = ans.filter((a,i)=>a===QS[i].a).length;
+  const blank = ans.filter(a=>a===null).length;
+  const score = ok * 100 / QS.length;
+  const msg = score>=80?'Hasil yang kuat. Pertahankan ritme latihanmu.':score>=60?'Cukup baik. Pelajari lagi pembahasan soal yang salah.':'Masih ada ruang naik. Baca pembahasan di bawah, lalu coba lagi.';
+  app.innerHTML = `
+  <div class="card score">
+    ${timeUp?'<p class="muted">Waktu habis, jawabanmu otomatis dikumpulkan.</p>':''}
+    <div class="ring" style="--p:${score}"><span>${score}</span></div>
+    <p><strong>${msg}</strong></p>
+    <div class="stats"><div><strong>${ok}</strong><span class="muted">Benar</span></div><div><strong>${QS.length-ok-blank}</strong><span class="muted">Salah</span></div><div><strong>${blank}</strong><span class="muted">Kosong</span></div></div>
+    <p class="muted">Waktu pengerjaan ${fmt(used)}</p>
+  </div>
+  <h2>Pembahasan</h2>
+  ${QS.map((q,i)=>`<div class="card"><span class="tag">${q.m}</span><div class="q">${i+1}. ${q.q}</div>
+    ${q.o.map((t,j)=>`<button class="opt ${j===q.a?'ok':(ans[i]===j?'no':'')}" disabled><b>${'ABCD'[j]}</b><span>${t}${j===q.a?' (kunci)':''}${ans[i]===j&&j!==q.a?' (jawabanmu)':''}</span></button>`).join('')}
+    ${ans[i]===null?'<p class="muted">Kamu tidak menjawab soal ini.</p>':''}
+    <div class="exp"><strong>Pembahasan:</strong> ${q.e}</div></div>`).join('')}
+  <button class="primary" id="again">Ulangi simulasi</button>`;
+  $('#again').onclick=home;
+  window.scrollTo(0,0);
+}
+home();
+</script>
+</body>
+</html>
